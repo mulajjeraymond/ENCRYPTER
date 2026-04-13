@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Message & File Encryptor</title>
+
+<!-- CryptoJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<!-- QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f8;
+  padding: 20px;
+}
+.container {
+  max-width: 700px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+textarea, input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+}
+button {
+  padding: 10px 15px;
+  margin: 5px;
+  cursor: pointer;
+}
+#qrcode {
+  margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>🔐 Secure Message, File & QR Encryptor</h2>
+
+<label>Message / Encrypted Text</label>
+<textarea id="message" rows="4"></textarea>
+
+<label>Secret Key</label>
+<input type="password" id="key">
+
+<label>Encrypt a File</label>
+<input type="file" id="fileInput">
+
+<div>
+<button onclick="encryptText()">Encrypt Text</button>
+<button onclick="decryptText()">Decrypt Text</button>
+<button onclick="encryptFile()">Encrypt File</button>
+<button onclick="generateQR()">Generate QR</button>
+<button onclick="shareText()">Share</button>
+<button onclick="clearAll()">Refresh</button>
+</div>
+
+<h3>Result</h3>
+<textarea id="result" rows="4" readonly></textarea>
+
+<div id="qrcode"></div>
+</div>
+
+<script>
+// TEXT ENCRYPTION
+function encryptText() {
+  let msg = message.value;
+  let key = keyInput();
+  result.value = CryptoJS.AES.encrypt(msg, key).toString();
+}
+
+// TEXT DECRYPTION
+function decryptText() {
+  let encrypted = message.value;
+  let key = keyInput();
+  result.value = CryptoJS.AES.decrypt(encrypted, key)
+                    .toString(CryptoJS.enc.Utf8);
+}
+
+// FILE ENCRYPTION
+function encryptFile() {
+  let file = fileInput.files[0];
+  if (!file) return alert("Select a file");
+
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    let encrypted = CryptoJS.AES.encrypt(e.target.result, keyInput()).toString();
+    downloadFile(encrypted, file.name + ".enc");
+  };
+  reader.readAsText(file);
+}
+
+// DOWNLOAD ENCRYPTED FILE
+function downloadFile(data, filename) {
+  let blob = new Blob([data], { type: "text/plain" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
+
+// QR CODE GENERATION
+function generateQR() {
+  document.getElementById("qrcode").innerHTML = "";
+  new QRCode("qrcode", {
+    text: result.value || message.value,
+    width: 200,
+    height: 200
+  });
+}
+
+// SHARE FUNCTION
+function shareText() {
+  let text = result.value || message.value;
+  if (navigator.share) {
+    navigator.share({ text });
+  } else {
+    let url = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${url}`, "_blank");
+  }
+}
+
+// CLEAR / REFRESH
+function clearAll() {
+  message.value = "";
+  result.value = "";
+  key.value = "";
+  fileInput.value = "";
+  qrcode.innerHTML = "";
+}
+
+// HELPER
+function keyInput() {
+  return document.getElementById("key").value;
+}
+</script>
+
+</body>
+</html>
